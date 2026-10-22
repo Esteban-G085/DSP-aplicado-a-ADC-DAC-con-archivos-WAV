@@ -12,23 +12,42 @@ from core.quantization import (AdcConfig, bits_comparison, level_voltages, nivel
 from core.sampling import pick_zoom_start
 from gui.plot_tab import GenreTab
 from gui.plot_utils import fmt
+from gui.scroll_frame import ScrollFrame
 
 COLUMNS = (("n", 45), ("t [ms]", 75), ("x(n) [norm]", 90), ("x(n) [V]", 90), ("q(n)", 75),
            ("Nivel", 55), ("código ADC (bin)", 130), ("V_DAC [V]", 90), ("error [mV]", 85))
 NIVEL_COLUMNS = (("Nivel", 60), ("Voltaje [V]", 100), ("Código binario", 150))
 
 COMPARE_BITS = (2, 3, 4, 5, 6, 7, 8)   # resoluciones comparadas en el panel multi-bits
+BOTTOM_HEIGHT = 280                    # alto del área de texto y tablas (con desplazamiento)
+DETAIL_MIN, DETAIL_MAX = 4, 24         # rango del deslizador «muestras en el detalle»
 
 
 class QuantizationTab(GenreTab):
     slug = "2_cuantizacion_adc_dac"
 
     def build_controls(self) -> None:
-        self.info_label = ttk.Label(self.bottom, justify="left", wraplength=1250)
-        self.info_label.pack(fill="x", padx=8, pady=(4, 2))
+        ttk.Label(self.controls, text="  Muestras en el detalle:").pack(side="left")
+        self.n_detail = tk.IntVar(value=12)
+        self.n_detail_label = ttk.Label(self.controls, text="12", width=3, anchor="w")
+        scale = ttk.Scale(self.controls, from_=DETAIL_MIN, to=DETAIL_MAX, orient="horizontal",
+                          variable=self.n_detail, length=170)
+        scale.pack(side="left", padx=(4, 2))
+        scale.configure(command=self._on_slider)
+        scale.bind("<ButtonRelease-1>", lambda _e: self.render())
+        self.n_detail_label.pack(side="left")
 
-        frame = ttk.Frame(self.bottom)
-        frame.pack(fill="both", expand=True, padx=8, pady=(0, 4))
+        # El área de texto y tablas va en un marco con desplazamiento y alto fijo:
+        # así no aprieta la figura, por muchas filas o líneas que tenga.
+        self.scroller = ScrollFrame(self.bottom, height=BOTTOM_HEIGHT)
+        self.scroller.pack(fill="both", expand=False)
+        body = self.scroller.body
+
+        self.info_label = ttk.Label(body, justify="left", wraplength=1200)
+        self.info_label.pack(fill="x", padx=6, pady=(4, 2))
+
+        frame = ttk.Frame(body)
+        frame.pack(fill="both", expand=True, padx=6, pady=(0, 4))
 
         left = ttk.LabelFrame(frame, text="Muestras de x(n) y su código")
         left.pack(side="left", fill="both", expand=True, padx=(0, 6))
@@ -53,9 +72,12 @@ class QuantizationTab(GenreTab):
         self.nivel_table.pack(side="left", fill="both", expand=True)
         sb2.pack(side="right", fill="y")
 
-        self.pcm_label = ttk.Label(self.bottom, justify="left", wraplength=1250,
+        self.pcm_label = ttk.Label(body, justify="left", wraplength=1200,
                                    font=("Consolas", 9))
-        self.pcm_label.pack(fill="x", padx=8, pady=(0, 6))
+        self.pcm_label.pack(fill="x", padx=6, pady=(0, 6))
+
+    def _on_slider(self, value) -> None:
+        self.n_detail_label.config(text=str(int(float(value))))
 
     def clear_text(self) -> None:
         self.info_label.config(text="")
@@ -91,7 +113,8 @@ class QuantizationTab(GenreTab):
         ax1.step(tm, vq, where="mid", color=color, lw=1.4, label="salida DAC (cuantizada)")
         ax1.set(title=f"x(n) y cuantización (Δ = {fmt(cfg.lsb * 1e3, 4)} mV)", xlabel="t [ms]",
                 ylabel="V")
-        ax1.legend(fontsize=8, loc="upper right")
+        # La leyenda va DEBAJO del panel: dentro tapaba la curva.
+        ax1.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2)
 
         # --- (0,1) error de cuantización (N bits vs N-2 bits) ------------
         ax2 = fig.add_subplot(gs[0, 1])
@@ -106,7 +129,7 @@ class QuantizationTab(GenreTab):
         ax2.set(title="Error de cuantización e(n) = V_DAC − x(n)   (líneas: ±Δ/2)",
                 xlabel="t [ms]", ylabel="mV")
         ax2.grid(alpha=0.3)
-        ax2.legend(fontsize=8, loc="upper right")
+        ax2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=1)
 
         # --- (1,0) comparación de resoluciones ----------------------------
         bits_list = sorted(set(COMPARE_BITS) | {cfg.bits})
@@ -118,11 +141,11 @@ class QuantizationTab(GenreTab):
             ax3.step(tm, qb.volts_q[sl], where="mid", lw=1.2,
                      color=(color if b == cfg.bits else shades[i % len(shades)]),
                      ls=("-" if b == cfg.bits else "--"),
-                     label=f"{b} bits (L={2 ** b}, Δ={fmt(qb.cfg.lsb * 1e3, 4)} mV)")
+                     label=f"{b} b (L={2 ** b}, Δ={fmt(qb.cfg.lsb * 1e3, 3)} mV)")
         ax3.set(title=f"La misma x(n) cuantizada con distintas resoluciones "
                       f"({bits_list[0]} a {bits_list[-1]} bits)", xlabel="t [ms]", ylabel="V")
         ax3.grid(alpha=0.3)
-        ax3.legend(fontsize=7, loc="upper right", ncol=2)
+        ax3.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.26), ncol=2)
 
         # --- (1,1) SQNR frente al número de bits --------------------------
         ax4 = fig.add_subplot(gs[1, 1])
@@ -136,7 +159,7 @@ class QuantizationTab(GenreTab):
                  label=f"N = {cfg.bits}: {qr.sqnr_db:.1f} dB")
         ax4.set(title="Relación señal-ruido de cuantización (SQNR) vs bits", xlabel="N [bits]",
                 ylabel="SQNR [dB]")
-        ax4.legend(fontsize=8, loc="upper left")
+        ax4.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=1)
         ax4.grid(alpha=0.3)
 
         # --- (2,0) uso del rango del ADC ----------------------------------
@@ -151,7 +174,7 @@ class QuantizationTab(GenreTab):
         ax5.set_yscale("log")
 
         # --- (2,1) detalle con los códigos binarios -----------------------
-        n_det = 16
+        n_det = max(DETAIL_MIN, min(DETAIL_MAX, int(self.n_detail.get())))
         j0 = pick_zoom_start(smp.x_n, smp.fs_eff, n_det / smp.fs_eff)
         k = min(n_det, len(smp.x_n) - j0)
         sd = slice(j0, j0 + k)
@@ -169,10 +192,22 @@ class QuantizationTab(GenreTab):
         markers, stems, _ = ax6.stem(td, qr.volts[sd], basefmt=" ")
         markers.set(color="0.45", markersize=4)
         stems.set(color="0.45", linewidth=0.8)
-        for t, val, code in zip(td, qr.volts_q[sd], qr.codes_u[sd]):
+
+        # Anotar todos los códigos a la vez los solapaba: se salta alguno de cada
+        # grupo según lo largo que sea la etiqueta frente al sitio disponible,
+        # y se alterna la altura para que las que sí se dibujan no se pisen.
+        panel_w = 0.46 * fig.get_figwidth() * fig.dpi          # ancho aprox. del panel
+        spacing = panel_w / max(1, k)
+        label_w = cfg.bits * 4.8                              # ancho aprox. del texto
+        stride = max(1, int(np.ceil(label_w / max(spacing, 1.0))))
+        for i, (t, val, code) in enumerate(zip(td, qr.volts_q[sd], qr.codes_u[sd])):
+            if i % stride:
+                continue
+            dy = 9 if (i // stride) % 2 == 0 else -17
             ax6.annotate(to_binary(int(code), cfg.bits), (t, val),
-                         textcoords="offset points", xytext=(0, 7), ha="center",
+                         textcoords="offset points", xytext=(0, dy), ha="center",
                          fontsize=7, fontweight="bold", color="#7b241c")
+        ax6.margins(y=0.30)
         if few_levels:
             ax6.set_yticks(levels)
             ax6.set_yticklabels([f"{i:0{cfg.bits}b} ({v:+.2f}V)" for i, v in enumerate(levels)],
@@ -180,7 +215,7 @@ class QuantizationTab(GenreTab):
         ax6.set(title=f"Codificación binaria PCM (L={cfg.levels} niveles, "
                        f"Δ = {fmt(cfg.lsb)} V)", xlabel="t [ms]", ylabel="código binario (V)")
         ax6.grid(alpha=0.3, which="both")
-        ax6.legend(fontsize=7, loc="upper right")
+        ax6.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.26), ncol=2)
 
         # --- bloques de texto ---------------------------------------------
         clip = ""

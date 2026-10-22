@@ -26,7 +26,7 @@ class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("DSP aplicado a ADC–DAC con archivos WAV")
-        self.geometry("1320x900")
+        self.geometry("1400x980")
         self.minsize(1100, 700)
         self.session = Session()
         self.version = 0

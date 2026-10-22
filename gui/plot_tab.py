@@ -25,7 +25,7 @@ class PlotTab(ttk.Frame):
         self.controls.pack(side="top", fill="x", padx=6, pady=4)
         self.bottom = ttk.Frame(self)
         self.bottom.pack(side="bottom", fill="x")
-        self.figure = Figure(figsize=(10, 6), dpi=100, layout="constrained")
+        self.figure = Figure(figsize=(11, 7.5), dpi=100, layout="constrained")
         self.canvas = FigureCanvasTkAgg(self.figure, master=self)
         self.toolbar = NavigationToolbar2Tk(self.canvas, self, pack_toolbar=False)
         self.toolbar.pack(side="bottom", fill="x")

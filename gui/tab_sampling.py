@@ -80,7 +80,7 @@ class SamplingTab(GenreTab):
                  label=f"salida DAC ({cfg.bits} bits, Δ = {fmt(cfg.lsb * 1e3, 4)} mV)")
         ax1.set(title=f"Muestreo x(n) = x(n·Ts) y su cuantización "
                        f"(Δ = {fmt(cfg.lsb * 1e3, 4)} mV)", xlabel="t [ms]", ylabel="V")
-        ax1.legend(loc="upper right", fontsize=8)
+        ax1.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2, fontsize=8)
         ax1.grid(alpha=0.3)
 
         # --- (1,0) espectro de magnitud ----------------------------------
@@ -97,7 +97,7 @@ class SamplingTab(GenreTab):
                 ylabel="|X(f)| [dB]" if db else "|X(f)|", xlim=(0, seg.fs / 2))
         if db:
             ax2.set_ylim(-120, 5)
-        ax2.legend(loc="upper right", fontsize=8)
+        ax2.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2, fontsize=8)
         ax2.grid(alpha=0.3)
 
         # --- (1,1) error de cuantización ---------------------------------
@@ -109,7 +109,7 @@ class SamplingTab(GenreTab):
         ax3.set(title="Error de cuantización e(n)   (líneas: ±Δ/2)", xlabel="t [ms]",
                 ylabel="mV")
         ax3.grid(alpha=0.3)
-        ax3.legend(loc="upper right", fontsize=8)
+        ax3.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=1, fontsize=8)
 
         # --- veredicto de Nyquist-Shannon ---------------------------------
         extra = ""
