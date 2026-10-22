@@ -11,7 +11,7 @@ from core.quantization import (AdcConfig, bits_comparison, level_voltages, nivel
                                quantize, sample_table, to_binary)
 from core.sampling import pick_zoom_start
 from gui.plot_tab import GenreTab
-from gui.plot_utils import fmt
+from gui.plot_utils import fmt, fmt_short
 from gui.scroll_frame import ScrollFrame
 
 COLUMNS = (("n", 45), ("t [ms]", 75), ("x(n) [norm]", 90), ("x(n) [V]", 90), ("q(n)", 75),
@@ -19,12 +19,13 @@ COLUMNS = (("n", 45), ("t [ms]", 75), ("x(n) [norm]", 90), ("x(n) [V]", 90), ("q
 NIVEL_COLUMNS = (("Nivel", 60), ("Voltaje [V]", 100), ("Código binario", 150))
 
 COMPARE_BITS = (2, 3, 4, 5, 6, 7, 8)   # resoluciones comparadas en el panel multi-bits
-BOTTOM_HEIGHT = 280                    # alto del área de texto y tablas (con desplazamiento)
+BOTTOM_HEIGHT = 110                    # alto del panel de texto y tablas (con desplazamiento)
 DETAIL_MIN, DETAIL_MAX = 4, 24         # rango del deslizador «muestras en el detalle»
 
 
 class QuantizationTab(GenreTab):
     slug = "2_cuantizacion_adc_dac"
+    bottom_height = BOTTOM_HEIGHT
 
     def build_controls(self) -> None:
         ttk.Label(self.controls, text="  Muestras en el detalle:").pack(side="left")
@@ -37,10 +38,10 @@ class QuantizationTab(GenreTab):
         scale.bind("<ButtonRelease-1>", lambda _e: self.render())
         self.n_detail_label.pack(side="left")
 
-        # El área de texto y tablas va en un marco con desplazamiento y alto fijo:
-        # así no aprieta la figura, por muchas filas o líneas que tenga.
+        # El texto y las tablas van en un panel con desplazamiento: así no
+        # aprietan la figura y el usuario les da el espacio que quiera.
         self.scroller = ScrollFrame(self.bottom, height=BOTTOM_HEIGHT)
-        self.scroller.pack(fill="both", expand=False)
+        self.scroller.pack(fill="both", expand=True)
         body = self.scroller.body
 
         self.info_label = ttk.Label(body, justify="left", wraplength=1200)
@@ -93,9 +94,9 @@ class QuantizationTab(GenreTab):
         color = track.genre.color
         fig = self.figure
         fig.suptitle(f"{track.title()} — ADC/DAC de {cfg.bits} bits, ±{params.vref:g} V", fontsize=11)
-        gs = fig.add_gridspec(3, 2)
+        gs = fig.add_gridspec(2, 2)
 
-        # --- (0,0) x(n) y salida del DAC ---------------------------------
+        # --- (0,0) x(n) cuantizada y error e(n) (eje gemelo derecho) -----
         win = 0.02
         i0 = pick_zoom_start(smp.x_n, smp.fs_eff, win)
         n = max(8, min(len(smp.x_n) - i0, int(win * smp.fs_eff)))
@@ -111,29 +112,30 @@ class QuantizationTab(GenreTab):
                 ax1.axhline(k * cfg.lsb, color="0.88", lw=0.5, zorder=0)
         ax1.plot(tm, v, "o-", color="0.55", ms=3, lw=0.8, label="x(n) [V]")
         ax1.step(tm, vq, where="mid", color=color, lw=1.4, label="salida DAC (cuantizada)")
-        ax1.set(title=f"x(n) y cuantización (Δ = {fmt(cfg.lsb * 1e3, 4)} mV)", xlabel="t [ms]",
-                ylabel="V")
-        # La leyenda va DEBAJO del panel: dentro tapaba la curva.
-        ax1.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2)
+        ax1.set(xlabel="t [ms]", ylabel="señal [V]")
 
-        # --- (0,1) error de cuantización (N bits vs N-2 bits) ------------
-        ax2 = fig.add_subplot(gs[0, 1])
+        ax1e = ax1.twinx()                       # eje gemelo: el error de cuantización
         low_bits = max(2, cfg.bits - 2)
         qr_low = quantize(smp.x_n, AdcConfig(low_bits, cfg.vref))
-        ax2.plot(tm, qr_low.error[sl] * 1e3, color="0.8", lw=0.9,
-                 label=f"e(n) con {low_bits} bits (SQNR {qr_low.sqnr_db:.1f} dB)")
-        ax2.plot(tm, qr.error[sl] * 1e3, color="#c0392b", lw=0.9,
-                 label=f"e(n) con {cfg.bits} bits (SQNR {qr.sqnr_db:.1f} dB)")
+        ax1e.plot(tm, qr_low.error[sl] * 1e3, color="0.78", lw=0.9,
+                  label=f"e(n) con {low_bits} bits (SQNR {qr_low.sqnr_db:.1f} dB)")
+        ax1e.plot(tm, qr.error[sl] * 1e3, color="#c0392b", lw=0.9,
+                  label=f"e(n) con {cfg.bits} bits (SQNR {qr.sqnr_db:.1f} dB)")
         for s in (+1, -1):
-            ax2.axhline(s * cfg.lsb / 2 * 1e3, color="k", ls="--", lw=0.8)
-        ax2.set(title="Error de cuantización e(n) = V_DAC − x(n)   (líneas: ±Δ/2)",
-                xlabel="t [ms]", ylabel="mV")
-        ax2.grid(alpha=0.3)
-        ax2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=1)
+            ax1e.axhline(s * cfg.lsb / 2 * 1e3, color="k", ls="--", lw=0.8)
+        ax1e.set_ylabel("error e(n) [mV]")
+        ax1.set(title=f"x(n) cuantizada y error e(n) en el eje derecho "
+                      f"(Δ = {fmt(cfg.lsb * 1e3, 4)} mV, líneas: ±Δ/2)")
+        ax1.grid(alpha=0.3)
+        # Las dos leyendas juntas: la de la señal y la del error.
+        h1, l1 = ax1.get_legend_handles_labels()
+        h2, l2 = ax1e.get_legend_handles_labels()
+        ax1.legend(h1 + h2, l1 + l2, loc="upper center", bbox_to_anchor=(0.5, -0.22),
+                   ncol=2, fontsize=8)
 
-        # --- (1,0) comparación de resoluciones ----------------------------
+        # --- (0,1) comparación de resoluciones ----------------------------
         bits_list = sorted(set(COMPARE_BITS) | {cfg.bits})
-        ax3 = fig.add_subplot(gs[1, 0])
+        ax3 = fig.add_subplot(gs[0, 1])
         ax3.plot(tm, qr.volts[sl], "o", color="0.6", ms=3, label="x(n) [V]")
         shades = ("0.55", "0.45", "0.35", "#1e8449", "#2471a3", "#7b5ea7", "#d68910")
         for i, b in enumerate(bits_list):
@@ -141,14 +143,15 @@ class QuantizationTab(GenreTab):
             ax3.step(tm, qb.volts_q[sl], where="mid", lw=1.2,
                      color=(color if b == cfg.bits else shades[i % len(shades)]),
                      ls=("-" if b == cfg.bits else "--"),
-                     label=f"{b} b (L={2 ** b}, Δ={fmt(qb.cfg.lsb * 1e3, 3)} mV)")
+                     label=f"{b} b (Δ={fmt_short(qb.cfg.lsb * 1e3, 3)} mV)")
         ax3.set(title=f"La misma x(n) cuantizada con distintas resoluciones "
-                      f"({bits_list[0]} a {bits_list[-1]} bits)", xlabel="t [ms]", ylabel="V")
+                      f"({bits_list[0]} a {bits_list[-1]} bits, L = 2ᴺ niveles)",
+                xlabel="t [ms]", ylabel="V")
         ax3.grid(alpha=0.3)
-        ax3.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.26), ncol=2)
+        ax3.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.26), ncol=4)
 
-        # --- (1,1) SQNR frente al número de bits --------------------------
-        ax4 = fig.add_subplot(gs[1, 1])
+        # --- (1,0) SQNR frente al número de bits --------------------------
+        ax4 = fig.add_subplot(gs[1, 0])
         bl = list(range(2, 25))
         ax4.plot(bl, [quantize(smp.x_n, AdcConfig(b, cfg.vref)).sqnr_db for b in bl], "o-",
                  ms=3, color=color, label="medida en esta señal")
@@ -159,28 +162,17 @@ class QuantizationTab(GenreTab):
                  label=f"N = {cfg.bits}: {qr.sqnr_db:.1f} dB")
         ax4.set(title="Relación señal-ruido de cuantización (SQNR) vs bits", xlabel="N [bits]",
                 ylabel="SQNR [dB]")
-        ax4.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=1)
+        ax4.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=3)
         ax4.grid(alpha=0.3)
 
-        # --- (2,0) uso del rango del ADC ----------------------------------
-        ax5 = fig.add_subplot(gs[2, 0])
-        used_lo, used_hi = int(qr.codes_u.min()), int(qr.codes_u.max())
-        span = max(used_hi - used_lo + 1, 1)
-        bins = min(128, max(8, span))
-        ax5.hist(qr.codes_u, bins=bins, range=(used_lo - 0.5, used_hi + 0.5), color=color)
-        ax5.set(title=f"Uso del rango del ADC (códigos {used_lo} … {used_hi} de "
-                       f"{cfg.levels - 1})", xlabel="código ADC (offset binario)",
-                ylabel="muestras")
-        ax5.set_yscale("log")
-
-        # --- (2,1) detalle con los códigos binarios -----------------------
+        # --- (1,1) detalle con los códigos binarios -----------------------
         n_det = max(DETAIL_MIN, min(DETAIL_MAX, int(self.n_detail.get())))
         j0 = pick_zoom_start(smp.x_n, smp.fs_eff, n_det / smp.fs_eff)
         k = min(n_det, len(smp.x_n) - j0)
         sd = slice(j0, j0 + k)
         td = (smp.t_n[sd] - smp.t_n[j0]) * 1e3
 
-        ax6 = fig.add_subplot(gs[2, 1])
+        ax6 = fig.add_subplot(gs[1, 1])
         # Con muchos bits los 2^N niveles no se pueden dibujar: se muestran solo si son pocos.
         few_levels = cfg.levels <= 32
         levels = level_voltages(cfg) if few_levels else None
@@ -222,6 +214,8 @@ class QuantizationTab(GenreTab):
         if qr.clipped:
             plural = "" if qr.clipped == 1 else "s"
             clip = f" | {qr.clipped} muestra{plural} saturada{plural}"
+        used_lo, used_hi = int(qr.codes_u.min()), int(qr.codes_u.max())
+        uso = 100.0 * (used_hi - used_lo + 1) / max(1, cfg.levels)
         self.info_label.config(text=(
             f"Resolución: {cfg.bits} bits ({cfg.levels} niveles) | "
             f"Rango de entrada: [−{params.vref:g} V, +{params.vref:g} V] "
@@ -232,7 +226,8 @@ class QuantizationTab(GenreTab):
             f"SQNR medida = {qr.sqnr_db:.1f} dB | esperada (P_señal/(Δ²/12)) = "
             f"{qr.sqnr_expected_db:.1f} dB | senoide a plena escala = {qr.sqnr_sine_db:.1f} dB | "
             f"rango dinámico ≈ 6.02·N = {cfg.dynamic_range_db:.1f} dB | "
-            f"x(n) a fs = {smp.fs_eff:.0f} Hz{clip}"))
+            f"Uso del rango del ADC: códigos {used_lo}…{used_hi} de {cfg.levels - 1} "
+            f"({uso:.0f} % del rango) | x(n) a fs = {smp.fs_eff:.0f} Hz{clip}"))
 
         self.table.delete(*self.table.get_children())
         for row in sample_table(smp.t_n, smp.x_n, qr, j0, 40):
