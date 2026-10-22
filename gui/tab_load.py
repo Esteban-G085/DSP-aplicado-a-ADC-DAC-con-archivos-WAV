@@ -14,7 +14,7 @@ class LoadTab(ttk.Frame):
         self.app = app
         ttk.Label(self, wraplength=1200, justify="left", text=(
             "Cargue un WAV corto por género y complete la investigación breve (músico/orquesta/banda, obra y año). "
-            "Estéreo se convierte a mono promediando canales. Luego use las pestañas 1 a 5.")
+            "Estéreo se convierte a mono promediando canales. Luego use las pestañas 1 a 3.")
         ).pack(fill="x", padx=10, pady=(8, 4))
         self.slots: dict[str, GenreSlot] = {}
         for g in GENRES:

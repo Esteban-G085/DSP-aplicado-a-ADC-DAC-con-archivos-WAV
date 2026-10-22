@@ -1,7 +1,6 @@
 """Clases base de las pestañas con figura Matplotlib incrustada."""
 from __future__ import annotations
 
-import os
 import tkinter as tk
 import traceback
 from tkinter import messagebox, ttk
@@ -43,6 +42,7 @@ class PlotTab(ttk.Frame):
 
     def render(self) -> None:
         self.figure.clear()
+        self.clear_text()
         try:
             self.draw()
         except UserError as exc:
@@ -53,19 +53,14 @@ class PlotTab(ttk.Frame):
         self.canvas.draw_idle()
         self._rendered_version = self.app.version
 
+    def clear_text(self) -> None:
+        """Vacía los rótulos de texto: se llama antes de cada dibujo."""
+
     def draw(self) -> None:
         raise NotImplementedError
 
     def placeholder(self, msg: str = NO_DATA) -> None:
         self.figure.text(0.5, 0.5, msg, ha="center", va="center", fontsize=12, color="#777")
-
-    # --- exportación ---------------------------------------------------
-    def export(self, folder: str) -> list[str]:
-        self.refresh_controls()
-        self.render()
-        path = os.path.join(folder, f"{self.slug}.png")
-        self.figure.savefig(path, dpi=150)
-        return [path]
 
 
 class GenreTab(PlotTab):
@@ -105,14 +100,3 @@ class GenreTab(PlotTab):
 
     def draw_track(self, track, params) -> None:
         raise NotImplementedError
-
-    def export(self, folder: str) -> list[str]:
-        paths = []
-        self.refresh_controls()
-        for t in self.app.session.loaded():
-            self.genre_var.set(t.genre.label)
-            self.render()
-            path = os.path.join(folder, f"{self.slug}_{t.key}.png")
-            self.figure.savefig(path, dpi=150)
-            paths.append(path)
-        return paths

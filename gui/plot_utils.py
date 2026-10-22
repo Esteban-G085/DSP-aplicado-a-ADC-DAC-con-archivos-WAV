@@ -8,6 +8,13 @@ def to_db(mag: np.ndarray) -> np.ndarray:
     return 20.0 * np.log10(mag + 1e-12)
 
 
+def fmt(v: float, dec: int = 6) -> str:
+    """Número en decimal o en notación científica, según su magnitud."""
+    if v != 0 and (abs(v) < 1e-4 or abs(v) >= 1e7):
+        return f"{v:.3e}"
+    return f"{v:.{dec}f}"
+
+
 def plot_decimate(f: np.ndarray, y: np.ndarray, n_out: int = 3000):
     """Reduce un espectro largo a ~n_out puntos conservando los máximos locales."""
     n = len(y)

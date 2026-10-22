@@ -4,7 +4,5 @@ __pycache__/
 venv/
 env/
 
-# Salidas del programa (exportaciones PNG/CSV y demos)
-*.png
-*.csv
-export*/
+# Cuaderno de referencia del trabajo (no forma parte del programa)
+*.ipynb

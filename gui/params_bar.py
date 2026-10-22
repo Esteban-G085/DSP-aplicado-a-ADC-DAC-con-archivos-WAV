@@ -39,7 +39,7 @@ class ParamsBar(ttk.LabelFrame):
 
         field("Inicio [s]", "start", 6)
         field("Duración [s]", "dur", 6)
-        field("fs de x(n) [Hz]", "fs", 8, ["44100", "22050", "11025", "8000", "4000", "2000"])
+        field("fs objetivo de x(n) [Hz]", "fs", 8, ["44100", "22050", "11025", "8000", "4000", "2000"])
         field("Bits ADC/DAC (N)", "bits", 4, ["4", "6", "8", "10", "12", "16", "24"])
         field("±Vref [V]", "vref", 6, ["1.0", "1.65", "2.5", "3.3", "5.0"])
         ttk.Checkbutton(self, text="Filtro antialiasing", variable=self.v["aa"]).grid(row=0, column=col, padx=8)
