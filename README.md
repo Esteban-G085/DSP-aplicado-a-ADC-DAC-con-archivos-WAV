@@ -39,23 +39,25 @@ gui/                    ventana y pestañas
 tests/test_core.py      python -m unittest discover -s tests
 ```
 
-## Las cuatro pestañas
+## Pestañas
 
 | Pestaña | Apartado | Contenido |
 |---|---|---|
 | 0. Carga de audios | a, b | Un WAV por género + músico/orquesta/banda, obra, año e investigación breve |
 | 1. Señal, muestreo y FFT | c | x(t) completa, zoom con x(n) y la escalera del DAC, espectro de magnitud \|X(f)\| y veredicto de Nyquist-Shannon |
-| 2. Cuantización ADC–DAC | d | Resolución (LSB) y factores de escala, error e(n), comparación de 2 a 8 bits, SQNR, uso del rango, códigos binarios y trama PCM |
-| 3. Comparación de espectros | — | Los espectros de magnitud de los 5 géneros superpuestos en una sola gráfica, con métricas por género |
+| 2. ADC/DAC (tiempo) | d | Señal x(n) cuantizada y error de cuantización en paneles amplios |
+| 3. Señal cuantizada (resoluciones) | d | Comparación ampliada de la señal cuantizada con distintas resoluciones (2 a 8 bits) |
+| 4. Comparación de espectros | — | Los espectros unilaterales de amplitud en voltios de los 5 géneros superpuestos en una gráfica lineal, con métricas por género |
 
-En las pestañas 1 y 2 se elige el género con el desplegable; en la 3 se comparan todos a la vez.
+En las pestañas 1, 2 y 3 se elige el género con el desplegable; en la 4 se comparan todos a la vez.
 Para guardar una figura use el botón **Guardar** de la barra de herramientas de Matplotlib,
 que ya va incrustada en cada pestaña.
 
 ## Fórmulas implementadas
 
 - **Muestreo:** x(n) = x(t = n·Ts), Ts = 1/fs. Nyquist-Shannon: fs ≥ 2·f_max, con f_max = frecuencia
-  que acumula el 99 % de la energía (FFT con ventana Hann, magnitud corregida por la ganancia coherente).
+  que acumula el 99 % de la energía (FFT unilateral, magnitud escalada por 2/N; DC y Nyquist no se duplican).
+  El espectro se muestra por defecto como amplitud lineal en voltios, con opción de escala dBV.
 - **Decimación:** solo admite factores enteros, de modo que la fs efectiva es fs/step y casi nunca
   coincide con la fs pedida (pedir 8000 Hz sobre un archivo de 44100 Hz da 7350 Hz). El programa
   siempre dice las dos cifras.

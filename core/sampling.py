@@ -11,15 +11,12 @@ ANTIALIAS_CUTOFF_RATIO = 0.45   # corte en 0.45·fs_nuevo, por debajo de su Nyqu
 
 
 def magnitude_spectrum(x: np.ndarray, fs: float) -> tuple[np.ndarray, np.ndarray]:
-    """Espectro de magnitud |X(f)| con FFT y ventana de Hann.
-
-    La magnitud se corrige por la ganancia coherente de la ventana, de modo que
-    una senoide de amplitud A produce un pico de altura A.
-    """
+    """Espectro unilateral de amplitud |X(f)|, normalizado por el número de muestras."""
     n = len(x)
-    w = np.hanning(n)
-    X = np.fft.rfft(x * w)
-    mag = np.abs(X) * 2.0 / np.sum(w)
+    mag = np.abs(np.fft.rfft(x)) * (2.0 / n)
+    mag[0] *= 0.5
+    if n % 2 == 0:
+        mag[-1] *= 0.5
     f = np.fft.rfftfreq(n, 1.0 / fs)
     return f, mag
 
