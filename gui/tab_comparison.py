@@ -14,6 +14,7 @@ FMIN = 20.0
 
 class ComparisonTab(PlotTab):
     slug = "3_comparacion_espectros"
+    bottom_height = 165          # alto del panel con la tabla de métricas [px]
 
     def __init__(self, master, app):
         super().__init__(master, app)

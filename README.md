@@ -36,6 +36,7 @@ gui/                    ventana y pestañas
   tab_comparison.py     espectros de los 5 géneros en una sola gráfica
   plot_tab.py           clases base (figura incrustada + barra de Matplotlib)
   plot_utils.py         utilidades de graficación
+  scroll_frame.py       panel con desplazamiento vertical (texto y tablas)
 tests/test_core.py      python -m unittest discover -s tests
 ```
 
@@ -45,13 +46,21 @@ tests/test_core.py      python -m unittest discover -s tests
 |---|---|---|
 | 0. Carga de audios | a, b | Un WAV por género + músico/orquesta/banda, obra, año e investigación breve |
 | 1. Señal, muestreo y FFT | c | x(t) completa, zoom con x(n) y la escalera del DAC, espectro de magnitud \|X(f)\| y veredicto de Nyquist-Shannon |
-| 2. ADC/DAC (tiempo) | d | Señal x(n) cuantizada y error de cuantización en paneles amplios |
-| 3. Señal cuantizada (resoluciones) | d | Comparación ampliada de la señal cuantizada con distintas resoluciones (2 a 8 bits) |
-| 4. Comparación de espectros | — | Los espectros unilaterales de amplitud en voltios de los 5 géneros superpuestos en una gráfica lineal, con métricas por género |
+| 2. Cuantización ADC–DAC | d | x(n) cuantizada con el error e(n) en el eje derecho, comparación de 2 a 8 bits, SQNR, códigos binarios y trama PCM |
+| 3. Comparación de espectros | — | Los espectros de magnitud de los 5 géneros superpuestos en una sola gráfica, con métricas por género |
 
 En las pestañas 1, 2 y 3 se elige el género con el desplegable; en la 4 se comparan todos a la vez.
 Para guardar una figura use el botón **Guardar** de la barra de herramientas de Matplotlib,
 que ya va incrustada en cada pestaña.
+
+### Reparto del espacio
+
+Cada pestaña de gráficas es un panel con **dos zonas separadas por una barra arrastrable**: arriba
+la figura, abajo el texto, las tablas y la trama PCM. Arrastrando la barra se decide cuánto
+espacio va a cada zona, y el botón **«Solo gráficas»** de la barra de controles pliega la zona
+inferior para dejar la figura a tamaño completo. Las pestañas 1 y 2 tienen la misma rejilla 2×2,
+de modo que sus paneles se ven del mismo tamaño; el contenido largo (tablas, trama PCM) se recorre
+con la barra de desplazamiento del panel inferior.
 
 ## Fórmulas implementadas
 

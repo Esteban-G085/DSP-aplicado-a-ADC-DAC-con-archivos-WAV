@@ -11,10 +11,12 @@ from core.quantization import AdcConfig, quantize
 from core.sampling import magnitude_spectrum, nyquist_report, pick_zoom_start
 from gui.plot_tab import GenreTab
 from gui.plot_utils import fmt, plot_decimate, to_db
+from gui.scroll_frame import ScrollFrame
 
 
 class SamplingTab(GenreTab):
     slug = "1_muestreo_fft"
+    bottom_height = 110          # alto del panel con el veredicto de Nyquist [px]
 
     def build_controls(self) -> None:
         self.scale = tk.StringVar(value="lineal")
@@ -22,7 +24,11 @@ class SamplingTab(GenreTab):
         for txt in ("dB", "lineal"):
             ttk.Radiobutton(self.controls, text=txt, value=txt, variable=self.scale,
                             command=self.render).pack(side="left")
-        self.info_label = ttk.Label(self.bottom, justify="left", wraplength=1250)
+        # El veredicto va en un panel con desplazamiento: si el texto crece
+        # (notas de truncamiento o de filtro) no empuja a la figura.
+        scroller = ScrollFrame(self.bottom, height=self.bottom_height)
+        scroller.pack(fill="both", expand=True)
+        self.info_label = ttk.Label(scroller.body, justify="left", wraplength=1250)
         self.info_label.pack(fill="x", padx=8, pady=4)
 
     def clear_text(self) -> None:

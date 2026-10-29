@@ -15,6 +15,14 @@ def fmt(v: float, dec: int = 6) -> str:
     return f"{v:.{dec}f}"
 
 
+def fmt_short(v: float, dec: int = 3) -> str:
+    """Como fmt(), pero sin los ceros sobrantes a la derecha."""
+    s = fmt(v, dec)
+    if "." in s and "e" not in s:
+        s = s.rstrip("0").rstrip(".")
+    return s or "0"
+
+
 def plot_decimate(f: np.ndarray, y: np.ndarray, n_out: int = 3000):
     """Reduce un espectro largo a ~n_out puntos conservando los máximos locales."""
     n = len(y)
