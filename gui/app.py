@@ -15,9 +15,8 @@ HELP = (
     "Flujo de trabajo:\n"
     "0. Cargue un WAV corto por género y escriba la investigación (músico, obra, año).\n"
     "1. Señal, muestreo y FFT: x(t), x(n) con sus bits, espectro de magnitud y Nyquist-Shannon.\n"
-    "2. ADC/DAC (tiempo): cuantización de x(n) y error.\n"
-    "3. Resoluciones ADC: comparación ampliada de la señal cuantizada de 2 a 8 bits.\n"
-    "4. Comparación: espectros de magnitud de todos los géneros en una sola gráfica.\n\n"
+    "2. Cuantización ADC–DAC: factor de escala, resolución (LSB), SQNR, códigos binarios y trama PCM.\n"
+    "3. Comparación: espectros de magnitud de todos los géneros en una sola gráfica.\n\n"
     "Cambie los parámetros globales (arriba) y vuelva a graficar para ver aliasing (fs baja sin filtro) "
     "o ruido de cuantización (N bajo)."
 )
@@ -38,20 +37,11 @@ class App(tk.Tk):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True, padx=8, pady=4)
         self.load_tab = LoadTab(self.notebook, self)
-        self.plot_tabs = [
-            SamplingTab(self.notebook, self),
-            QuantizationTab(self.notebook, self, "time"),
-            QuantizationTab(self.notebook, self, "resolutions"),
-            ComparisonTab(self.notebook, self),
-        ]
+        self.plot_tabs = [SamplingTab(self.notebook, self), QuantizationTab(self.notebook, self),
+                          ComparisonTab(self.notebook, self)]
         self.tabs = [self.load_tab, *self.plot_tabs]
-        titles = [
-            "0. Carga de audios",
-            "1. Señal, muestreo y FFT",
-            "2. ADC/DAC (tiempo)",
-            "3. Señal cuantizada (resoluciones)",
-            "4. Comparación de espectros",
-        ]
+        titles = ["0. Carga de audios", "1. Señal, muestreo y FFT", "2. Cuantización ADC–DAC",
+                  "3. Comparación de espectros"]
         for tab, title in zip(self.tabs, titles):
             self.notebook.add(tab, text=title)
         self.notebook.bind("<<NotebookTabChanged>>", lambda _e: self.current_tab().on_show())

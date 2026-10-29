@@ -40,7 +40,7 @@ gui/                    ventana y pestañas
 tests/test_core.py      python -m unittest discover -s tests
 ```
 
-## Pestañas
+## Las cuatro pestañas
 
 | Pestaña | Apartado | Contenido |
 |---|---|---|
@@ -49,7 +49,7 @@ tests/test_core.py      python -m unittest discover -s tests
 | 2. Cuantización ADC–DAC | d | x(n) cuantizada con el error e(n) en el eje derecho, comparación de 2 a 8 bits, SQNR, códigos binarios y trama PCM |
 | 3. Comparación de espectros | — | Los espectros de magnitud de los 5 géneros superpuestos en una sola gráfica, con métricas por género |
 
-En las pestañas 1, 2 y 3 se elige el género con el desplegable; en la 4 se comparan todos a la vez.
+En las pestañas 1 y 2 se elige el género con el desplegable; en la 3 se comparan todos a la vez.
 Para guardar una figura use el botón **Guardar** de la barra de herramientas de Matplotlib,
 que ya va incrustada en cada pestaña.
 
@@ -65,8 +65,7 @@ con la barra de desplazamiento del panel inferior.
 ## Fórmulas implementadas
 
 - **Muestreo:** x(n) = x(t = n·Ts), Ts = 1/fs. Nyquist-Shannon: fs ≥ 2·f_max, con f_max = frecuencia
-  que acumula el 99 % de la energía (FFT unilateral, magnitud escalada por 2/N; DC y Nyquist no se duplican).
-  El espectro se muestra por defecto como amplitud lineal en voltios, con opción de escala dBV.
+  que acumula el 99 % de la energía (FFT con ventana Hann, magnitud corregida por la ganancia coherente).
 - **Decimación:** solo admite factores enteros, de modo que la fs efectiva es fs/step y casi nunca
   coincide con la fs pedida (pedir 8000 Hz sobre un archivo de 44100 Hz da 7350 Hz). El programa
   siempre dice las dos cifras.
