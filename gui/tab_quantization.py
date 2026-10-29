@@ -1,14 +1,10 @@
 """Pestaña 2: cuantización, ADC y DAC sobre x(n) (apartado d)."""
 from __future__ import annotations
 
-import tkinter as tk
-from tkinter import ttk
-
 import numpy as np
 
 from core.pipeline import extract_segment, sample_segment
-from core.quantization import (AdcConfig, bits_comparison, level_voltages, nivel_table, pcm_stream,
-                               quantize, sample_table, to_binary)
+from core.quantization import AdcConfig, quantize
 from core.sampling import pick_zoom_start
 from gui.plot_tab import GenreTab
 from gui.plot_utils import fmt, fmt_short
@@ -50,41 +46,11 @@ class QuantizationTab(GenreTab):
         frame = ttk.Frame(body)
         frame.pack(fill="both", expand=True, padx=6, pady=(0, 4))
 
-        left = ttk.LabelFrame(frame, text="Muestras de x(n) y su código")
-        left.pack(side="left", fill="both", expand=True, padx=(0, 6))
-        self.table = ttk.Treeview(left, columns=[c[0] for c in COLUMNS], show="headings", height=6)
-        for name, width in COLUMNS:
-            self.table.heading(name, text=name)
-            self.table.column(name, width=width, anchor="center")
-        sb = ttk.Scrollbar(left, orient="vertical", command=self.table.yview)
-        self.table.configure(yscrollcommand=sb.set)
-        self.table.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
-
-        right = ttk.LabelFrame(frame, text="Niveles del ADC ↔ código binario")
-        right.pack(side="left", fill="both", expand=True)
-        self.nivel_table = ttk.Treeview(right, columns=[c[0] for c in NIVEL_COLUMNS],
-                                        show="headings", height=6)
-        for name, width in NIVEL_COLUMNS:
-            self.nivel_table.heading(name, text=name)
-            self.nivel_table.column(name, width=width, anchor="center")
-        sb2 = ttk.Scrollbar(right, orient="vertical", command=self.nivel_table.yview)
-        self.nivel_table.configure(yscrollcommand=sb2.set)
-        self.nivel_table.pack(side="left", fill="both", expand=True)
-        sb2.pack(side="right", fill="y")
-
-        self.pcm_label = ttk.Label(body, justify="left", wraplength=1200,
-                                   font=("Consolas", 9))
-        self.pcm_label.pack(fill="x", padx=6, pady=(0, 6))
-
-    def _on_slider(self, value) -> None:
-        self.n_detail_label.config(text=str(int(float(value))))
-
-    def clear_text(self) -> None:
-        self.info_label.config(text="")
-        self.pcm_label.config(text="")
-        self.table.delete(*self.table.get_children())
-        self.nivel_table.delete(*self.nivel_table.get_children())
+    def __init__(self, master, app, view: str):
+        if view not in self.VIEWS:
+            raise ValueError(f"Vista de cuantización desconocida: {view}")
+        self.view = view
+        super().__init__(master, app)
 
     def draw_track(self, track, params) -> None:
         seg = extract_segment(track.audio, params)

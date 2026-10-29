@@ -32,6 +32,23 @@ class TestSampling(unittest.TestCase):
         self.assertAlmostEqual(f[np.argmax(mag)], 1000, delta=1)
         self.assertAlmostEqual(mag.max(), 0.5, delta=0.02)
 
+    def test_two_tone_spectrum_preserves_relative_amplitudes(self):
+        fs = 1000
+        t = np.arange(100) / fs
+        x = 3 * np.sin(2 * np.pi * 10 * t) + np.cos(2 * np.pi * 30 * t)
+        f, mag = magnitude_spectrum(x, fs)
+        self.assertAlmostEqual(mag[np.argmin(abs(f - 10))], 3.0, places=10)
+        self.assertAlmostEqual(mag[np.argmin(abs(f - 30))], 1.0, places=10)
+
+    def test_spectrum_does_not_double_dc_or_nyquist(self):
+        f_dc, mag_dc = magnitude_spectrum(np.ones(8), 8)
+        self.assertAlmostEqual(f_dc[0], 0)
+        self.assertAlmostEqual(mag_dc[0], 1)
+
+        f_nyquist, mag_nyquist = magnitude_spectrum(np.array([1, -1] * 4), 8)
+        self.assertAlmostEqual(f_nyquist[-1], 4)
+        self.assertAlmostEqual(mag_nyquist[-1], 1)
+
     def test_bandwidth(self):
         f, mag = magnitude_spectrum(sine(3000), FS)
         self.assertLess(abs(effective_bandwidth(f, mag) - 3000), 30)

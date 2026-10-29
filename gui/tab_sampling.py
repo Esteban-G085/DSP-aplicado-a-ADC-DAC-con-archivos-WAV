@@ -19,7 +19,7 @@ class SamplingTab(GenreTab):
     bottom_height = 110          # alto del panel con el veredicto de Nyquist [px]
 
     def build_controls(self) -> None:
-        self.scale = tk.StringVar(value="dB")
+        self.scale = tk.StringVar(value="lineal")
         ttk.Label(self.controls, text="Magnitud:").pack(side="left", padx=(16, 2))
         for txt in ("dB", "lineal"):
             ttk.Radiobutton(self.controls, text=txt, value=txt, variable=self.scale,
@@ -45,6 +45,8 @@ class SamplingTab(GenreTab):
         x_orig = seg.x_raw * seg.gain
         f, mag = magnitude_spectrum(x_orig, seg.fs)
         fn, magn = magnitude_spectrum(smp.x_n, smp.fs_eff)
+        mag *= params.vref
+        magn *= params.vref
         rep = nyquist_report(f, mag, seg.fs, smp.fs_eff, smp.step, smp.antialias,
                              fs_asked=params.fs_target)
         color = track.genre.color
@@ -92,17 +94,23 @@ class SamplingTab(GenreTab):
         # --- (1,0) espectro de magnitud ----------------------------------
         ax2 = fig.add_subplot(gs[1, 0])
         fd, md = plot_decimate(f, to_db(mag) if db else mag)
-        ax2.plot(fd, md, color="0.7", lw=0.7, label="x(t)")
         fd2, md2 = plot_decimate(fn, to_db(magn) if db else magn)
-        ax2.plot(fd2, md2, color=color, lw=0.9, label="x(n)")
+        if db:
+            ax2.plot(fd, md, color="0.7", lw=0.7, label="x(t)")
+            ax2.plot(fd2, md2, color=color, lw=0.9, label="x(n)")
+        else:
+            ax2.vlines(fd, 0, md, color="0.7", lw=0.55, alpha=0.7, label="x(t)")
+            ax2.vlines(fd2, 0, md2, color=color, lw=0.75, label="x(n)")
         ax2.axvline(smp.fs_eff / 2, color="#c0392b", ls="--", lw=1.2,
                     label=f"Nyquist de x(n) = {smp.fs_eff / 2:.0f} Hz")
         ax2.axvline(rep.f_max, color="#1e8449", ls=":", lw=1.4,
                     label=f"f_max (99 %) = {rep.f_max:.0f} Hz")
-        ax2.set(title="Espectro de magnitud |X(f)| (FFT, ventana Hann)", xlabel="f [Hz]",
-                ylabel="|X(f)| [dB]" if db else "|X(f)|", xlim=(0, seg.fs / 2))
+        ax2.set(title="Espectro de magnitud unilateral |X(f)| (FFT, escala 2/N)", xlabel="f [Hz]",
+                ylabel="|X(f)| [dBV]" if db else "Amplitud [V]", xlim=(0, seg.fs / 2))
         if db:
-            ax2.set_ylim(-120, 5)
+            ax2.set_ylim(-120, max(5, 20 * np.log10(params.vref) + 5))
+        else:
+            ax2.set_ylim(bottom=0)
         ax2.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2, fontsize=8)
         ax2.grid(alpha=0.3)
 
