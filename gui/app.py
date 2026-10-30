@@ -10,13 +10,15 @@ from gui.tab_comparison import ComparisonTab
 from gui.tab_load import LoadTab
 from gui.tab_quantization import QuantizationTab
 from gui.tab_sampling import SamplingTab
+from gui.tab_tdah import TdahTab
 
 HELP = (
     "Flujo de trabajo:\n"
     "0. Cargue un WAV corto por género y escriba la investigación (músico, obra, año).\n"
     "1. Señal, muestreo y FFT: x(t), x(n) con sus bits, espectro de magnitud y Nyquist-Shannon.\n"
     "2. Cuantización ADC–DAC: factor de escala, resolución (LSB), SQNR, códigos binarios y trama PCM.\n"
-    "3. Comparación: espectros de magnitud de todos los géneros en una sola gráfica.\n\n"
+    "3. Comparación: espectros de magnitud de todos los géneros en una sola gráfica.\n"
+    "4. Perfil TDAH: nivel en 1/3 de octava, reparto de energía por banda e índice heurístico.\n\n"
     "Cambie los parámetros globales (arriba) y vuelva a graficar para ver aliasing (fs baja sin filtro) "
     "o ruido de cuantización (N bajo)."
 )
@@ -38,10 +40,10 @@ class App(tk.Tk):
         self.notebook.pack(fill="both", expand=True, padx=8, pady=4)
         self.load_tab = LoadTab(self.notebook, self)
         self.plot_tabs = [SamplingTab(self.notebook, self), QuantizationTab(self.notebook, self),
-                          ComparisonTab(self.notebook, self)]
+                          ComparisonTab(self.notebook, self), TdahTab(self.notebook, self)]
         self.tabs = [self.load_tab, *self.plot_tabs]
         titles = ["0. Carga de audios", "1. Señal, muestreo y FFT", "2. Cuantización ADC–DAC",
-                  "3. Comparación de espectros"]
+                  "3. Comparación de espectros", "4. Perfil TDAH"]
         for tab, title in zip(self.tabs, titles):
             self.notebook.add(tab, text=title)
         self.notebook.bind("<<NotebookTabChanged>>", lambda _e: self.current_tab().on_show())
